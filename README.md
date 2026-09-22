@@ -19,6 +19,19 @@ It prints JSON with the number of `lines`, `words`, and `characters`, for exampl
 {"characters": 136, "lines": 5, "words": 32}
 ```
 
+To include the most frequent words, pass an optional `--top N` argument:
+
+```powershell
+python src\text_stats.py sample.txt --top 3
+```
+
+The JSON output then includes a `top` array of up to `N` objects. Words are
+counted case-insensitively and ties are ordered alphabetically:
+
+```json
+"top": [{"word": "example", "count": 4}, {"word": "text", "count": 3}]
+```
+
 Run the built-in tests from the repository root:
 
 ```powershell

@@ -6,7 +6,7 @@ from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from src.text_stats import calculate_stats, main
+from src.text_stats import calculate_stats, main, most_common_words
 
 
 class TextStatsTests(unittest.TestCase):
@@ -21,6 +21,19 @@ class TextStatsTests(unittest.TestCase):
             calculate_stats(""),
             {"lines": 0, "words": 0, "characters": 0},
         )
+
+    def test_most_common_words_is_case_insensitive_with_deterministic_ties(self):
+        self.assertEqual(
+            most_common_words("Beta alpha ALPHA beta gamma", 3),
+            [
+                {"word": "alpha", "count": 2},
+                {"word": "beta", "count": 2},
+                {"word": "gamma", "count": 1},
+            ],
+        )
+
+    def test_most_common_words_zero_limit(self):
+        self.assertEqual(most_common_words("one two", 0), [])
 
     def test_main_prints_json_for_utf8_file(self):
         with TemporaryDirectory() as directory:
@@ -38,6 +51,28 @@ class TextStatsTests(unittest.TestCase):
         self.assertEqual(
             json.loads(output.getvalue()),
             {"lines": 2, "words": 4, "characters": 20},
+        )
+
+    def test_main_prints_top_words_when_requested(self):
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "input.txt"
+            path.write_text("Beta alpha ALPHA beta gamma.", encoding="utf-8")
+            original_argv = sys.argv
+            output = StringIO()
+            try:
+                sys.argv = ["text_stats.py", str(path), "--top", "2"]
+                with redirect_stdout(output):
+                    main()
+            finally:
+                sys.argv = original_argv
+
+        result = json.loads(output.getvalue())
+        self.assertEqual(
+            result["top"],
+            [
+                {"word": "alpha", "count": 2},
+                {"word": "beta", "count": 2},
+            ],
         )
 
 
